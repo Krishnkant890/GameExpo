@@ -2,12 +2,19 @@
 
 import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function PlayerImagePanel({ imageUrl, lastPlayerName }: { imageUrl: string | null, lastPlayerName: string | null }) {
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+        setHasError(false);
+    }, [imageUrl]);
+
     return (
         <div className="w-full h-full relative group">
             <div className="w-full h-full bg-black/40 relative overflow-hidden flex flex-col items-center justify-center transition-all">
-                {imageUrl && imageUrl !== 'none' ? (
+                {imageUrl && imageUrl !== 'none' && !hasError ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -17,16 +24,20 @@ export default function PlayerImagePanel({ imageUrl, lastPlayerName }: { imageUr
                             src={imageUrl}
                             className="w-full h-full object-cover"
                             alt="Player Generation"
-                            onError={(e) => {
-                                // If the image fails to load, hide it and show placeholder
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement!.parentElement!.innerHTML = `<div class="text-center relative w-full h-full flex items-center justify-center"><div class="absolute inset-0 bg-accent/5 blur-3xl rounded-full scale-150 animate-pulse"></div><div class="relative z-10 flex flex-col items-center gap-6"><p class="font-orbitron font-black text-xs text-rose-500 tracking-widest uppercase">GENERATION FAILED</p></div></div>`;
-                            }}
+                            onError={() => setHasError(true)}
                         />
                         <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                             <p className="font-orbitron font-black text-xs text-accent tracking-widest uppercase">{lastPlayerName}</p>
                         </div>
                     </motion.div>
+                ) : hasError ? (
+                    <div className="text-center relative w-full h-full flex items-center justify-center">
+                        <div className="absolute inset-0 bg-accent/5 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                        <div className="relative z-10 flex flex-col items-center gap-6">
+                            <p className="font-orbitron font-black text-xs text-rose-500 tracking-widest uppercase">GENERATION FAILED</p>
+                            <p className="font-orbitron text-[10px] text-white/50 uppercase tracking-widest">{lastPlayerName}</p>
+                        </div>
+                    </div>
                 ) : (
                     <div className="text-center relative">
                         <div className="absolute inset-0 bg-accent/5 blur-3xl rounded-full scale-150 animate-pulse" />

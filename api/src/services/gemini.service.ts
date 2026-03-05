@@ -6,9 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'EMPTY_KEY');
 
 export async function generateImageFromPrompt(prompt: string) {
     // If no real API key, return a mock URL
-    const isPlaceholder = !process.env.GEMINI_API_KEY ||
-        process.env.GEMINI_API_KEY === 'your_key_here' ||
-        process.env.GEMINI_API_KEY === 'EMPTY_KEY';
+    const isPlaceholder = !process.env.GEMINI_API_KEY;
 
     if (isPlaceholder) {
         console.warn('GEMINI_API_KEY is a placeholder or not set. Returning mock image.');
@@ -17,39 +15,33 @@ export async function generateImageFromPrompt(prompt: string) {
 
     try {
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash-exp"
+            model: "gemini-2.0-flash"
         });
 
-        // The user suggested "Generate a high quality cinematic image: " in the prompt
-        const result = await model.generateContent([
-            {
-                text: `Generate a high quality cinematic image based on this prompt: ${prompt}`
-            }
-        ]);
+        // Use Gemini Flash to enhance a small prompt into a highly cinematic prompt
+        const promptToEnhance = `You are a master AI image prompt engineer. The user wants to generate an image based on this short prompt: "${prompt}".
+        Expand this into a highly detailed, cinematic, comma-separated midjourney-style image generation prompt. Keep it under 500 characters. Return ONLY the enhanced prompt string, nothing else.`;
 
-        const response = result.response;
+        const result = await model.generateContent(promptToEnhance);
+        let enhancedPrompt = result.response.text().trim();
 
-        // Find the image part in the response
-        // Note: The structure might vary depending on the SDK version and model response
-        const imagePart = response.candidates?.[0]?.content?.parts?.find(
-            part => part.inlineData
-        );
+        // Remove quotes or asterisks if Gemini added them
+        enhancedPrompt = enhancedPrompt.replace(/^['"]|['"]$/g, '').replace(/\*/g, '');
 
-        if (imagePart && imagePart.inlineData) {
-            // Return as data URL for easy consumption by the frontend
-            return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-        }
+        console.log(`[Gemini] Enhanced prompt: ${enhancedPrompt}`);
 
-        // Fallback or throw error if no image returned
-        throw new Error('Gemini did not return an image. Check if image generation is supported for this model/region.');
+        // Return a dynamically generated AI image based on the enhanced prompt using pollinations.ai
+        const encodedPrompt = encodeURIComponent(enhancedPrompt);
+        // We append a random seed to prevent aggressive browser caching if the user sends the same prompt
+        const randomSeed = Math.floor(Math.random() * 10000000);
+        return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
     } catch (error: any) {
-        console.warn('Gemini image generation failed (likely Free Tier quota limit):', error.message);
-        console.warn('Falling back to free public AI image generation (pollinations.ai)...');
+        console.warn('Gemini text enhancement failed:', error.message);
+        console.warn('Falling back to direct pollinations.ai URL with original prompt...');
 
-        // Return a dynamically generated AI image based on the prompt as a fallback
-        // Unsplash Source API returns random images about the topic
-        const keywords = encodeURIComponent(prompt.split(' ').slice(0, 3).join(','));
-        return `https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1080&auto=format&fit=crop`;
+        const encodedPrompt = encodeURIComponent(prompt);
+        const randomSeed = Math.floor(Math.random() * 10000000);
+        return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${randomSeed}`;
     }
 }
 

@@ -127,7 +127,7 @@ export default function AdminPage() {
                                     <div className="absolute inset-0 bg-primary blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
                                     <div className="relative bg-primary hover:bg-white text-black px-8 py-5 rounded-[24px] font-black font-orbitron text-lg uppercase tracking-widest flex items-center justify-center gap-3 transition-all">
                                         {loading ? (
-                                            <>
+                                            <>      
                                                 <Loader2 className="animate-spin" />
                                                 <span>INITIALIZING...</span>
                                             </>

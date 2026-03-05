@@ -18,7 +18,20 @@ await fastify.register(cors, {
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS']
 });
 
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 await fastify.register(websocket);
+
+// Serve static assets from the workspace assets folder
+await fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../../assets'),
+  prefix: '/assets/', // optional: default '/'
+});
 
 const prisma = new PrismaClient();
 

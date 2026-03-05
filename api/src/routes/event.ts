@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { generateImageFromPrompt, getPromptSimilarity } from '../services/gemini.service.js';
+import { generateImageWithOpenAI } from '../services/openai.service.js';
+import { getPromptSimilarity } from '../services/gemini.service.js';
 
 const prisma = new PrismaClient();
 
@@ -94,15 +95,12 @@ export default async function eventRoutes(fastify: FastifyInstance, options: Fas
                 data: { name, email, phone: phone || null, eventId: id }
             });
 
-            // If first player, generate AI ref
+            // If first player, use static reference image
             if (event.status === 'waiting') {
-                const prompts = [
-                    "A futuristic warrior fighting a dragon in a burning city",
-                    "A neon cyberpunk samurai standing on a skyscraper",
-                    "A wizard casting lightning in a medieval battlefield"
-                ];
-                const referencePrompt = prompts[Math.floor(Math.random() * prompts.length)] as string;
-                const imageUrl = await generateImageFromPrompt(referencePrompt);
+                const referencePrompt = "A futuristic city at night - Match the static image";
+
+                // Using the static image from the backend assets via Next.js proxy
+                const imageUrl = `/assets/static_image.png`;
 
                 await prisma.event.update({
                     where: { id },
@@ -154,7 +152,7 @@ export default async function eventRoutes(fastify: FastifyInstance, options: Fas
             if (player.score !== null) return reply.status(400).send({ error: 'Already submitted' });
 
             // Generate user AI image
-            const userImageUrl = await generateImageFromPrompt(prompt);
+            const userImageUrl = await generateImageWithOpenAI(prompt);
 
             // Compare similarity
             const scoreRaw = await getPromptSimilarity((event as any).referencePrompt || "", prompt);
