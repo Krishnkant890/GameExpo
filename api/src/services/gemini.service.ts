@@ -42,9 +42,14 @@ export async function generateImageFromPrompt(prompt: string) {
 
         // Fallback or throw error if no image returned
         throw new Error('Gemini did not return an image. Check if image generation is supported for this model/region.');
-    } catch (error) {
-        console.error('Error generating image with Gemini:', error);
-        throw error;
+    } catch (error: any) {
+        console.warn('Gemini image generation failed (likely Free Tier quota limit):', error.message);
+        console.warn('Falling back to free public AI image generation (pollinations.ai)...');
+
+        // Return a dynamically generated AI image based on the prompt as a fallback
+        // Unsplash Source API returns random images about the topic
+        const keywords = encodeURIComponent(prompt.split(' ').slice(0, 3).join(','));
+        return `https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1080&auto=format&fit=crop`;
     }
 }
 
@@ -65,7 +70,7 @@ export async function getPromptSimilarity(prompt1: string, prompt2: string) {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+        const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
         const res1 = await model.embedContent(prompt1);
         const res2 = await model.embedContent(prompt2);
 

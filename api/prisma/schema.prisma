@@ -14,23 +14,22 @@ model Event {
   maxPlayers         Int
   referenceImageUrl  String?
   referenceEmbedding Json?
-  referencePrompt    String?
   aiWins             Int      @default(0)
   humanWins          Int      @default(0)
   createdAt          DateTime @default(now())
+  referencePrompt    String?
   players            Player[]
 }
 
 model Player {
-  id                 String   @id @default(uuid())
-  name               String
-  email              String
-  phone              String?
-  eventId            String
-  prompt             String?
-  generatedImageUrl  String?
-  score              Float?
-  createdAt          DateTime @default(now())
-
-  event              Event    @relation(fields: [eventId], references: [id])
+  id                String   @id @default(uuid())
+  name              String
+  email             String
+  phone             String?
+  eventId           String
+  prompt            String?
+  generatedImageUrl String?
+  score             Float?
+  createdAt         DateTime @default(now())
+  event             Event    @relation(fields: [eventId], references: [id])
 }

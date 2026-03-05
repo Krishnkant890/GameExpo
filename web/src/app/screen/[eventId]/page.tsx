@@ -18,6 +18,7 @@ export default function ScreenPage() {
     const [lastSubmission, setLastSubmission] = useState<any>(null);
     const [prompt, setPrompt] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showQR, setShowQR] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -60,6 +61,15 @@ export default function ScreenPage() {
         }
     };
 
+    const playUrl = typeof window !== 'undefined' ? `${window.location.origin}/play/${eventId}` : '';
+    const activePlayer = players.find(p => p.score === null);
+
+    useEffect(() => {
+        if (activePlayer) {
+            setShowQR(false);
+        }
+    }, [activePlayer]);
+
     if (error) return (
         <div className="flex items-center justify-center min-h-screen bg-black text-rose-500 font-orbitron">
             <h1 className="text-4xl font-black italic">SYSTEM ERROR: {error}</h1>
@@ -67,9 +77,6 @@ export default function ScreenPage() {
     );
 
     if (!event) return null;
-
-    const playUrl = typeof window !== 'undefined' ? `${window.location.origin}/play/${eventId}` : '';
-    const activePlayer = players.find(p => p.score === null);
 
     return (
         <div className="flex flex-col min-h-screen bg-[#050508] text-foreground p-8 font-inter relative overflow-hidden">
@@ -112,10 +119,23 @@ export default function ScreenPage() {
                         <>
                             {/* AI Target Box */}
                             <div className="flex-1 min-h-[40%] bg-glass rounded-[32px] border border-white/10 relative overflow-hidden group">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-1 rounded-b-xl border border-t-0 border-primary/30 z-20">
-                                    <span className="text-[10px] font-orbitron font-black text-primary uppercase tracking-widest">AI GENERATED IMAGE</span>
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-black/80 px-4 py-1 rounded-b-xl border border-t-0 border-primary/30 z-20 transition-all">
+                                    <span className="text-[10px] font-orbitron font-black text-primary uppercase tracking-widest">
+                                        {showQR ? 'SCAN TO JOIN GAME' : 'AI TARGET IMAGE'}
+                                    </span>
                                 </div>
-                                <AIImagePanel imageUrl={event.referenceImageUrl} status={event.status} description={event.referencePrompt} />
+                                {showQR ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+                                        <div className="scale-[0.85] origin-center -mt-4">
+                                            <QRDisplay url={playUrl} />
+                                        </div>
+                                        <p className="text-sm font-orbitron text-primary/80 animate-pulse tracking-widest uppercase font-bold mt-2">
+                                            Waiting for Challenger...
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <AIImagePanel imageUrl={event.referenceImageUrl} status={event.status} description={event.referencePrompt} />
+                                )}
                             </div>
 
                             {/* VS & Match Info */}
@@ -150,8 +170,12 @@ export default function ScreenPage() {
 
                             {/* Prompt Input Box */}
                             <div className="bg-glass rounded-2xl border border-white/10 p-3 flex gap-3">
-                                <button className="px-6 py-4 bg-rose-950/40 text-rose-500 border border-rose-500/30 rounded-xl font-orbitron font-black text-xs uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2">
-                                    <RotateCcw size={14} /> PLAY AGAIN
+                                <button
+                                    type="button"
+                                    onClick={() => setShowQR(!showQR)}
+                                    className="px-6 py-4 bg-rose-950/40 text-rose-500 border border-rose-500/30 rounded-xl font-orbitron font-black text-xs uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2"
+                                >
+                                    <RotateCcw size={14} /> {showQR ? 'SHOW AI IMAGE' : 'PLAY AGAIN'}
                                 </button>
                                 <form onSubmit={handleSendPrompt} className="flex-1 flex gap-3">
                                     <input
@@ -160,12 +184,12 @@ export default function ScreenPage() {
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Type Your Prompt Here..."
                                         disabled={!activePlayer || loading}
-                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-6 font-medium text-white placeholder:text-white/20 focus:outline-none focus:border-primary transition-all"
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-6 font-medium text-white placeholder:text-white/20 focus:outline-none focus:border-primary transition-all disabled:opacity-50"
                                     />
                                     <button
                                         type="submit"
                                         disabled={!activePlayer || loading || !prompt.trim()}
-                                        className="px-10 py-4 bg-primary text-black rounded-xl font-black font-orbitron text-sm uppercase tracking-widest hover:bg-white transition-all shadow-glow shadow-primary/20 flex items-center gap-2"
+                                        className="px-10 py-4 bg-primary text-black rounded-xl font-black font-orbitron text-sm uppercase tracking-widest hover:bg-white transition-all shadow-glow shadow-primary/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {loading ? 'GENERATING...' : 'SEND'}
                                         <Send size={16} />
