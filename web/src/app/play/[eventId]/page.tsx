@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation';
 import { joinEvent } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Loader2, Phone, CheckCircle2 } from 'lucide-react';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import 'react-phone-number-input/style.css';
 
 export default function PlayPage() {
     const { eventId } = useParams() as { eventId: string };
@@ -19,6 +22,19 @@ export default function PlayPage() {
         e.preventDefault();
         setLoading(true);
         setError('');
+
+        if (!phone) {
+            setError('Phone number is required.');
+            setLoading(false);
+            return;
+        }
+
+        const phoneNumberObj = parsePhoneNumberFromString(phone);
+        if (!phoneNumberObj || !phoneNumberObj.isValid()) {
+            setError('Please enter a valid phone number with the correct number of digits for your country.');
+            setLoading(false);
+            return;
+        }
         try {
             await joinEvent(eventId, name, email, phone);
             setStatus('registered');
@@ -96,13 +112,19 @@ export default function PlayPage() {
                     </div>
                     <div className="space-y-2">
                         <label className="text-[10px] font-orbitron font-black uppercase text-primary/40 flex items-center gap-2">
-                            <Phone size={12} /> Phone (Optional)
+                            <Phone size={12} /> Phone
                         </label>
-                        <input
-                            type="tel"
+                        <PhoneInput
+                            international
+                            defaultCountry="IN"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full bg-black/40 border-b-2 border-white/10 p-4 focus:border-primary focus:outline-none transition-all font-orbitron text-sm text-white"
+                            onChange={(val) => setPhone(val || '')}
+                            limitMaxLength={true}
+                            className="bg-black/40 border-b-2 border-white/10 p-4 focus-within:border-primary transition-all font-orbitron text-sm text-white phone-input-custom"
+                            numberInputProps={{
+                                className: "bg-transparent outline-none w-full ml-2",
+                                required: true
+                            }}
                         />
                     </div>
 

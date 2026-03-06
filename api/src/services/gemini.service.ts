@@ -1,50 +1,35 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { InferenceClient } from "@huggingface/inference";
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'EMPTY_KEY');
+const hfClient = new InferenceClient(process.env.HF_TOKEN);
 
 export async function generateImageFromPrompt(prompt: string) {
-    // If no real API key, return a mock URL
-    const isPlaceholder = !process.env.GEMINI_API_KEY ||
-        process.env.GEMINI_API_KEY === 'your_key_here' ||
-        process.env.GEMINI_API_KEY === 'EMPTY_KEY';
+    // If no real HF_TOKEN, return a mock URL
+    const isPlaceholder = !process.env.HF_TOKEN ||
+        process.env.HF_TOKEN === 'your_hf_token_here' ||
+        process.env.HF_TOKEN === 'EMPTY_TOKEN';
 
     if (isPlaceholder) {
-        console.warn('GEMINI_API_KEY is a placeholder or not set. Returning mock image.');
+        console.warn('HF_TOKEN is a placeholder or not set. Returning mock image.');
         return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop';
     }
 
     try {
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash-exp"
+        const imageBlob: any = await hfClient.textToImage({
+            provider: "fal-ai",
+            model: "black-forest-labs/FLUX.1-dev",
+            inputs: prompt,
+            parameters: { num_inference_steps: 5 },
         });
 
-        // The user suggested "Generate a high quality cinematic image: " in the prompt
-        const result = await model.generateContent([
-            {
-                text: `Generate a high quality cinematic image based on this prompt: ${prompt}`
-            }
-        ]);
-
-        const response = result.response;
-
-        // Find the image part in the response
-        // Note: The structure might vary depending on the SDK version and model response
-        const imagePart = response.candidates?.[0]?.content?.parts?.find(
-            part => part.inlineData
-        );
-
-        if (imagePart && imagePart.inlineData) {
-            // Return as data URL for easy consumption by the frontend
-            return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-        }
-
-        // Fallback or throw error if no image returned
-        throw new Error('Gemini did not return an image. Check if image generation is supported for this model/region.');
+        const arrayBuffer = await imageBlob.arrayBuffer();
+        const base64Image = Buffer.from(arrayBuffer).toString('base64');
+        return `data:image/png;base64,${base64Image}`;
     } catch (error: any) {
-        console.warn('Gemini image generation failed (likely Free Tier quota limit):', error.message);
-        console.warn('Falling back to free public AI image generation (pollinations.ai)...');
+        console.warn('Hugging Face image generation failed:', error.message);
 
         // Return a dynamically generated image based on the prompt as a fallback
         // loremflickr.com provides relevant images based on keywords

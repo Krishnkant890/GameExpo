@@ -244,7 +244,7 @@ export default function ScreenPage() {
                                     <div className="absolute inset-0 bg-primary/5 pattern-grid opacity-10" />
                                     <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
                                         {activePlayer ? (
-                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activePlayer.name}`} className="w-full h-full object-cover" alt="Avatar" />
+                                            <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${activePlayer.id || activePlayer.name}`} className="w-full h-full object-cover" alt="Avatar" />
                                         ) : (
                                             <User size={20} className="text-primary/40" />
                                         )}

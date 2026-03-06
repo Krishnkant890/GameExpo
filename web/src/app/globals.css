@@ -77,6 +77,26 @@ body {
     animation: scanline 8s linear infinite;
     pointer-events: none;
   }
+
+  .phone-input-custom .PhoneInputCountry {
+    margin-right: 12px;
+  }
+
+  .phone-input-custom .PhoneInputCountrySelectArrow {
+    color: var(--primary);
+  }
+
+  .phone-input-custom .PhoneInputCountryIcon {
+    border: none;
+    box-shadow: none;
+  }
+
+  .phone-input-custom input {
+    background: transparent !important;
+    color: white !important;
+    border: none !important;
+    outline: none !important;
+  }
 }
 
 @keyframes scanline {
