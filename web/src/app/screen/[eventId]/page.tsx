@@ -51,7 +51,15 @@ export default function ScreenPage() {
 
         setLoading(true);
         try {
-            await submitPrompt(eventId, undefined, prompt);
+            const result = await submitPrompt(eventId, undefined, prompt);
+            // Use the response directly for immediate image display
+            if (result.imageUrl) {
+                setLastSubmission((prev: any) => ({
+                    ...prev,
+                    generatedImageUrl: result.imageUrl,
+                    name: activePlayer?.name || prev?.name,
+                }));
+            }
             setPrompt('');
             await fetchData();
         } catch (err: any) {
@@ -209,6 +217,7 @@ export default function ScreenPage() {
                         <PlayerImagePanel
                             imageUrl={lastSubmission?.generatedImageUrl}
                             lastPlayerName={lastSubmission?.name}
+                            isGenerating={loading}
                         />
                     </div>
                 </div>

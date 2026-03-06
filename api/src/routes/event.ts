@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { generateImageWithOpenAI } from '../services/openai.service.js';
+import { generateImageWithHuggingFace } from '../services/huggingface.service.js';
 import { getPromptSimilarity } from '../services/gemini.service.js';
 
 const prisma = new PrismaClient();
@@ -152,7 +152,7 @@ export default async function eventRoutes(fastify: FastifyInstance, options: Fas
             if (player.score !== null) return reply.status(400).send({ error: 'Already submitted' });
 
             // Generate user AI image
-            const userImageUrl = await generateImageWithOpenAI(prompt);
+            const userImageUrl = await generateImageWithHuggingFace(prompt);
 
             // Compare similarity
             const scoreRaw = await getPromptSimilarity((event as any).referencePrompt || "", prompt);

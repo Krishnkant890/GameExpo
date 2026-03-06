@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export default function PlayerImagePanel({ imageUrl, lastPlayerName }: { imageUrl: string | null, lastPlayerName: string | null }) {
+export default function PlayerImagePanel({ imageUrl, lastPlayerName, isGenerating = false }: { imageUrl: string | null, lastPlayerName: string | null, isGenerating?: boolean }) {
     const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
@@ -14,7 +14,20 @@ export default function PlayerImagePanel({ imageUrl, lastPlayerName }: { imageUr
     return (
         <div className="w-full h-full relative group">
             <div className="w-full h-full bg-black/40 relative overflow-hidden flex flex-col items-center justify-center transition-all">
-                {imageUrl && imageUrl !== 'none' && !hasError ? (
+                {isGenerating ? (
+                    <div className="text-center relative">
+                        <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full scale-150 animate-pulse" />
+                        <div className="relative z-10 flex flex-col items-center gap-6">
+                            <div className="relative">
+                                <Loader2 size={80} className="text-primary animate-spin" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-black font-orbitron text-primary uppercase tracking-widest animate-pulse">GENERATING</h3>
+                                <p className="font-orbitron text-[10px] text-white/50 uppercase tracking-[0.4em] leading-relaxed">AI is creating your image...</p>
+                            </div>
+                        </div>
+                    </div>
+                ) : imageUrl && imageUrl !== 'none' && !hasError ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -57,3 +70,4 @@ export default function PlayerImagePanel({ imageUrl, lastPlayerName }: { imageUr
         </div>
     );
 }
+
