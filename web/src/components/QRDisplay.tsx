@@ -45,7 +45,7 @@ export default function QRDisplay({ url }: { url: string }) {
             <div className="text-center space-y-4">
                 <div className="inline-flex items-center gap-2 bg-primary/10 px-6 py-2 rounded-full border border-primary/30">
                     <Zap className="text-primary" size={14} fill="currentColor" />
-                    <span className="text-[10px] font-orbitron font-black text-primary uppercase tracking-[0.4em]">Initialize Connection</span>
+                    <span className="text-[10px] font-orbitron font-black text-primary uppercase tracking-[0.4em]"></span>
                 </div>
                 <h2 className="text-4xl font-black font-orbitron text-glow-blue uppercase italic">Scan to join the game</h2>
                 {/* <div className="flex items-center justify-center gap-3 bg-black/40 border border-white/10 rounded-xl px-5 py-3 group hover:border-primary/50 transition-colors w-max mx-auto">
