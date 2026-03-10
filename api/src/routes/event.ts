@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const prisma = new PrismaClient();
 
 const REFERENCE_IMAGE_FILE = process.env.REFERENCE_IMAGE_FILE || 'test1.png';
+const REFERENCE_IMAGE_URL = process.env.REFERENCE_IMAGE_URL;
 
 function getMimeTypeFromFileName(fileName: string) {
     const ext = path.extname(fileName).toLowerCase();
@@ -17,7 +18,38 @@ function getMimeTypeFromFileName(fileName: string) {
     return 'application/octet-stream';
 }
 
+function getMimeTypeFromContentType(contentType: string | null) {
+    if (!contentType) return undefined;
+    const mime = contentType.split(';')[0]?.trim().toLowerCase();
+    if (!mime) return undefined;
+    return mime;
+}
+
+async function fetchReferenceImageAsDataUrl(imageUrl: string) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+        const res = await fetch(imageUrl, { signal: controller.signal });
+        if (!res.ok) {
+            throw new Error(`Failed to download reference image (${res.status} ${res.statusText})`);
+        }
+
+        const contentType = getMimeTypeFromContentType(res.headers.get('content-type'));
+        const arrayBuffer = await res.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const fallbackMimeType = getMimeTypeFromFileName(new URL(imageUrl).pathname);
+        return `data:${contentType || fallbackMimeType};base64,${base64}`;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 async function loadReferenceImageAsDataUrl() {
+    if (REFERENCE_IMAGE_URL) {
+        return fetchReferenceImageAsDataUrl(REFERENCE_IMAGE_URL);
+    }
+
     const referenceImagePathFromEnv = process.env.REFERENCE_IMAGE_PATH;
 
     const candidatePaths: string[] = [];
