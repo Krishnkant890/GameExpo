@@ -17,7 +17,7 @@ function getMimeTypeFromFileName(fileName: string) {
 }
 
 async function loadReferenceImageAsDataUrl() {
-    const imagePath = path.resolve(process.cwd(), 'src', 'assets', REFERENCE_IMAGE_FILE);
+    const imagePath = path.resolve(process.cwd(), 'src', REFERENCE_IMAGE_FILE);
     const imageBuffer = await readFile(imagePath);
     const mimeType = getMimeTypeFromFileName(REFERENCE_IMAGE_FILE);
     const base64 = imageBuffer.toString('base64');
@@ -52,21 +52,43 @@ export default async function eventRoutes(fastify: FastifyInstance, options: Fas
 
     // POST /events
     fastify.post('/events', async (request, reply) => {
-        const { name, maxPlayers } = request.body as { name: string; maxPlayers: number };
+        const { name, maxPlayers } = request.body as { name: string; maxPlayers: unknown };
 
-        if (!name || !maxPlayers) {
-            return reply.status(400).send({ error: 'Name and maxPlayers are required' });
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        if (!trimmedName) {
+            return reply.status(400).send({ error: 'Name is required' });
         }
 
-        const event = await prisma.event.create({
-            data: {
-                name,
-                maxPlayers: Number(maxPlayers),
-                status: 'waiting'
-            }
-        });
+        const parsedMaxPlayers =
+            typeof maxPlayers === 'string' ? Number(maxPlayers) : typeof maxPlayers === 'number' ? maxPlayers : NaN;
 
-        return event;
+        if (!Number.isFinite(parsedMaxPlayers) || !Number.isInteger(parsedMaxPlayers)) {
+            return reply.status(400).send({ error: 'maxPlayers must be an integer' });
+        }
+
+        // Prisma `Int` maps to Postgres INT4 (32-bit signed), so enforce a safe range to avoid 500s.
+        if (parsedMaxPlayers < 1 || parsedMaxPlayers > 2147483647) {
+            return reply.status(400).send({ error: 'maxPlayers must be between 1 and 2147483647' });
+        }
+
+        try {
+            const event = await prisma.event.create({
+                data: {
+                    name: trimmedName,
+                    maxPlayers: parsedMaxPlayers,
+                    status: 'waiting'
+                }
+            });
+
+            return event;
+        } catch (err: any) {
+            const message = typeof err?.message === 'string' ? err.message : '';
+            if (message.includes('Unable to fit integer value') || message.includes('INT4')) {
+                return reply.status(400).send({ error: 'Invalid maxPlayers value' });
+            }
+            request.log?.error?.(err);
+            return reply.status(500).send({ error: 'Internal Server Error' });
+        }
     });
 
     // GET /events/:id

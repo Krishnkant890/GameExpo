@@ -93,6 +93,35 @@ class GeminiService implements AIService {
             return 0;
         }
 
+        const evaluationPrompt = `
+You are an AI system that evaluates similarity between two images.
+
+Image 1: original reference image.
+Image 2: image generated from a user's prompt.
+
+User prompt used to generate Image 2:
+"${prompt}"
+
+Evaluate how closely Image 2 matches Image 1.
+
+Consider the following factors:
+- main objects and subjects
+- scene composition and positioning
+- colors and lighting
+- artistic style
+- overall visual similarity
+
+Scoring scale:
+0 = completely different images
+50 = partially similar
+100 = nearly identical
+
+Return ONLY valid JSON in this format:
+{"scorePercentage": number}
+
+Do not include explanations, text, or markdown.
+`;
+
         try {
             const scoreModels = uniqueNonEmpty([
                 process.env.GEMINI_SCORE_MODEL,
@@ -106,9 +135,7 @@ class GeminiService implements AIService {
                     const result = await model.generateContent([
                         referencePart,
                         generatedPart,
-                        `Compare image 1 (reference) and image 2 (generated for prompt "${prompt}").
-Return ONLY valid JSON:
-{"scorePercentage": <0-100>}`
+                        evaluationPrompt
                     ]);
 
                     const text = result.response.text()?.trim() || '';
