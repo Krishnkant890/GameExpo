@@ -1,13 +1,10 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { aiService } from '../services/gemini.service.js';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const prisma = new PrismaClient();
 
-const REFERENCE_IMAGE_FILE = process.env.REFERENCE_IMAGE_FILE || 'test1.png';
 const REFERENCE_IMAGE_URL = process.env.REFERENCE_IMAGE_URL;
 
 function getMimeTypeFromFileName(fileName: string) {
@@ -46,54 +43,11 @@ async function fetchReferenceImageAsDataUrl(imageUrl: string) {
 }
 
 async function loadReferenceImageAsDataUrl() {
-    if (REFERENCE_IMAGE_URL) {
-        return fetchReferenceImageAsDataUrl(REFERENCE_IMAGE_URL);
+    if (!REFERENCE_IMAGE_URL) {
+        throw new Error('Missing REFERENCE_IMAGE_URL env var.');
     }
 
-    const referenceImagePathFromEnv = process.env.REFERENCE_IMAGE_PATH;
-
-    const candidatePaths: string[] = [];
-    if (referenceImagePathFromEnv) {
-        candidatePaths.push(
-            path.isAbsolute(referenceImagePathFromEnv)
-                ? referenceImagePathFromEnv
-                : path.resolve(process.cwd(), referenceImagePathFromEnv)
-        );
-    }
-
-    // Prefer paths relative to this module so the file can be included in serverless bundles.
-    candidatePaths.push(fileURLToPath(new URL(`../${REFERENCE_IMAGE_FILE}`, import.meta.url)));
-
-    // Fallbacks for local/dev setups.
-    candidatePaths.push(path.resolve(process.cwd(), 'src', REFERENCE_IMAGE_FILE));
-    candidatePaths.push(path.resolve(process.cwd(), 'dist', REFERENCE_IMAGE_FILE));
-
-    let imageBuffer: Buffer | undefined;
-    let lastError: unknown;
-
-    for (const candidatePath of candidatePaths) {
-        try {
-            imageBuffer = await readFile(candidatePath);
-            lastError = undefined;
-            break;
-        } catch (err) {
-            lastError = err;
-        }
-    }
-
-    if (!imageBuffer) {
-        const errorMessage =
-            lastError instanceof Error ? lastError.message : typeof lastError === 'string' ? lastError : 'Unknown error';
-        throw new Error(
-            `Failed to load reference image (REFERENCE_IMAGE_FILE=${REFERENCE_IMAGE_FILE}). Tried: ${candidatePaths.join(
-                ', '
-            )}. Last error: ${errorMessage}`
-        );
-    }
-
-    const mimeType = getMimeTypeFromFileName(REFERENCE_IMAGE_FILE);
-    const base64 = imageBuffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
+    return fetchReferenceImageAsDataUrl(REFERENCE_IMAGE_URL);
 }
 
 // WebSocket clients
