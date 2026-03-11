@@ -80,7 +80,7 @@ class GeminiService implements AIService {
   private async generateImageFromPrompt(prompt: string): Promise<string> {
     try {
       const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.5-flash-image",
         generationConfig: { responseModalities: ["TEXT", "IMAGE"] } as any,
       });
 
