@@ -1,9 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { aiService } from '../services/gemini.service.js';
 import path from 'node:path';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const REFERENCE_IMAGE_URL = process.env.REFERENCE_IMAGE_URL;
 
